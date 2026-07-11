@@ -30,7 +30,9 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_PORT=${DB_PORT}
-      - REDIS_URL=${REDIS_URL}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - CELERY_REDIS_URL=${CELERY_REDIS_URL}
+      - CACHE_REDIS_URL=${CACHE_REDIS_URL}
     depends_on:
       - db
       - redis
@@ -46,7 +48,9 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_PORT=${DB_PORT}
-      - REDIS_URL=${REDIS_URL}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - CELERY_REDIS_URL=${CELERY_REDIS_URL}
+      - CACHE_REDIS_URL=${CACHE_REDIS_URL}
     depends_on:
       - db
       - redis

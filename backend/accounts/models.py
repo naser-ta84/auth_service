@@ -19,24 +19,18 @@ class User(AbstractBaseUser,PermissionsMixin):
         unique=True,
         db_index=True,
         max_length=11,
-        blank=True,
-        null=True,
         verbose_name=_('شماره تماس')
     )
-    first_name = models.CharField(
-        max_length=30,
-        verbose_name=_('نام')
-    )
-    last_name = models.CharField(
-        max_length=30,
-        verbose_name=_('نام خانوادگی')
+    is_verified = models.BooleanField(
+        default=False,
+        verbose_name=_('وضعیت احراز هویت')
     )
     is_staff = models.BooleanField(
         default=False,
         verbose_name=_('دسترسی ادمین')
     )
     is_active = models.BooleanField(
-        default=True,
+        default=False,
         verbose_name=_('وضعیت فعالیت')
     )
     date_joined = models.DateTimeField(
@@ -47,7 +41,7 @@ class User(AbstractBaseUser,PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'username'
-    REQUIRED_FIELDS = ['first_name','last_name']
+    REQUIRED_FIELDS = ['phone']
 
 
     class Meta:
@@ -55,4 +49,4 @@ class User(AbstractBaseUser,PermissionsMixin):
         verbose_name_plural=_('کاربران')
 
     def __str__(self):
-        return f'{self.first_name} {self.last_name} - {self.username}'
+        return f'{self.phone} - {self.username}'
