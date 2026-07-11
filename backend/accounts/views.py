@@ -7,6 +7,7 @@ from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
+from drf_spectacular.utils import extend_schema,OpenApiResponse
 
 import secrets
 
@@ -21,6 +22,19 @@ class RegisterAPIView(APIView):
     permission_classes = [AllowAny]
     throttle_classes = [OTPRequestThrottle]
 
+    @extend_schema(
+        summary="درخواست ثبت‌نام اولیه کاربر",
+        description="کاربر اطلاعات اولیه (یوزرنیم، تلفن، پسورد) را ارسال کرده و اکانت غیرفعال ساخته می‌شود. سپس کد OTP صادر و پیامک می‌شود.",
+        request=RegisterSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="ثبت‌نام اولیه موفق؛ کد تایید پیامک شد.",
+                examples=[{"detail": "کد احراز هویت با موفقیت ارسال شد"}]
+            ),
+            400: OpenApiResponse(
+                description="خطا در اعتبارسنجی داده‌ها (فرمت شماره، یوزرنیم تکراری یا عدم تطابق پسورد)")
+        }
+    )
     def post(self, request, *args, **kwargs):
 
         serializer = RegisterSerializer(data=request.data)
@@ -54,12 +68,29 @@ class VerifyRegistrationOTPAPIView(APIView):
     serializer_class = VerifyOTPSerializer
     throttle_classes = [OTPVerifyThrottle]
 
+    @extend_schema(
+        summary="تایید کد پیامکی ثبت‌نام",
+        description="بررسی کد ارسال شده برای فعال‌سازی نهایی حساب کاربری تازه ساخته شده. در صورت موفقیت، توکن‌های JWT صادر می‌شوند.",
+        request=VerifyOTPSerializer,
+        responses={
+            201: OpenApiResponse(
+                description="حساب کاربری با موفقیت فعال شد و توکن‌ها صادر گردیدند.",
+                examples=[{
+                    "status": "success",
+                    "detail": "ثبت نام و احراز هویت با موفقیت انجام شد",
+                    "tokens": {"refresh": "string", "access": "string"}
+                }]
+            ),
+            400: OpenApiResponse(description="کد منقضی شده یا اشتباه وارد شده است."),
+            404: OpenApiResponse(description="کاربری با این شماره یافت نشد.")
+        }
+    )
     def post(self, request, *args, **kwargs):
         serializer = VerifyOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        input_code = serializer.data.get('code')
-        phone = serializer.data.get('phone')
+        input_code = serializer.validated_data.get('code')
+        phone = serializer.validated_data.get('phone')
         cache_key = f'OTP for {phone}'
 
         cached_code = cache.get(
@@ -121,12 +152,45 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     throttle_classes = [UserRateThrottle]
     serializer_class = CustomTokenObtainPairSerializer
 
+    @extend_schema(
+        summary="ورود معمولی (نام کاربری و رمز عبور)",
+        description="احراز هویت استاندارد با استفاده از نام کاربری و پسورد. در صورت صحت اطلاعات و تایید بودن اکانت، توکن و اطلاعات کاربر بازگردانده می‌شود.",
+        responses={
+            200: OpenApiResponse(
+                description="ورود موفقیت‌آمیز.",
+                examples=[{
+                    "refresh": "string",
+                    "access": "string",
+                    "username": "naser",
+                    "phone": "09130000000",
+                    "is_verified": True,
+                    "detail": "ورود با موفقیت انجام شد."
+                }]
+            ),
+            400: OpenApiResponse(description="رمز عبور اشتباه است یا حساب کاربری تایید نشده (is_verified=False) است.")
+        }
+    )
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
+
 class RequestOTPAPIView(APIView):
 
     permission_classes = [AllowAny]
     throttle_classes = [OTPRequestThrottle]
     serializer_class = RequestOPTSerializer
 
+    @extend_schema(
+        summary="درخواست کد ورود یک‌بار مصرف (OTP)",
+        description="ارسال شماره تماس کاربر ثبت‌نام شده جهت دریافت کد پیامکی لاگین.",
+        request=RequestOPTSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="کد یک‌بار مصرف تولید و پیامک شد.",
+                examples=[{"detail": "کد یک بار مصرف با موفقیت ارسال شد."}]
+            ),
+            400: OpenApiResponse(description="کاربری با این شماره وجود ندارد یا فرمت شماره اشتباه است.")
+        }
+    )
     def post(self, request, *args, **kwargs):
 
         serializer = self.serializer_class(data=request.data)
@@ -161,6 +225,22 @@ class VerifyOTPAPIView(APIView):
     throttle_classes = [OTPVerifyThrottle]
     serializer_class = VerifyOTPSerializer
 
+    @extend_schema(
+        summary="تایید کد OTP و لاگین کاربر",
+        description="بررسی کد یک‌بار مصرف لاگین. اگر کاربر قبلاً مرحله فعال‌سازی ثبت‌نام را کامل نکرده بود، در این مرحله حسابش خودکار فعال (is_verified=True) می‌شود.",
+        request=VerifyOTPSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="کد صحیح است؛ کاربر لاگین شد.",
+                examples=[{
+                    "status": "success",
+                    "detail": "ورود با موفقیت انجام شد.",
+                    "tokens": {"refresh": "string", "access": "string"}
+                }]
+            ),
+            400: OpenApiResponse(description="کد منقضی شده یا اشتباه است.")
+        }
+    )
     def post(self, request, *args, **kwargs):
 
         serializer = self.serializer_class(data=request.data)
