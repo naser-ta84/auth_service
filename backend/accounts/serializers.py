@@ -5,11 +5,10 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 
 from rest_framework import serializers
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import User
-from .validators import PhoneNumberValidator,validate_illegal_usernames
+from .validators import PhoneNumberValidator
 
 class RegisterSerializer(serializers.ModelSerializer):
 
@@ -19,7 +18,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'username',
-            'phone'
+            'phone',
             'password',
             'confirmation_password',
         ]
@@ -44,9 +43,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             )
 
         tmp_user = User(
-            username=data.get('username'),
-            first_name=data.get('first_name'),
-            last_name=data.get('last_name')
+            username=data.get('username')
         )
 
         try:

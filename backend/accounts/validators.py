@@ -65,14 +65,12 @@ class PersonalInfoSimilarityValidator:
 
         essential_fields = [
             getattr(user, 'username',''),
-            getattr(user, 'first_name',''),
-            getattr(user, 'last_name',''),
         ]
 
         password_lower = password.lower()
 
         for field in essential_fields:
-            if field not in len(field) >= 3 :
+            if field and len(field) >= 3 :
                 field_lower = field.lower()
                 if field_lower in password_lower:
                     raise ValidationError(
