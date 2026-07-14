@@ -51,10 +51,11 @@ DJANGO_DEBUG=True
 
 ### 2. Build and Run Containers
 Execute the following command in your project terminal:
-
+```
 docker-compose up --build -d
-
+```
 ### 3. Run Migrations & Create Superuser
-
+```
 docker-compose exec web python manage.py migrate
 docker-compose exec web python manage.py createsuperuser
+```
