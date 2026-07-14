@@ -178,8 +178,15 @@ SIMPLE_JWT = {
 }
 
 #Celery Settings
-CELERY_BROKER_URL = os.environ.get('CELERY_REDIS_URL', 'redis://redis:6379/0')
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_REDIS_URL', 'redis://redis:6379/0')
+
+IS_PRODUCTION = os.environ.get('IS_PRODUCTION', 'False') == 'True'
+
+if IS_PRODUCTION:
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
+else:
+    CELERY_BROKER_URL = os.environ.get('CELERY_REDIS_URL', 'redis://localhost:6379/0')
+    CELERY_RESULT_BACKEND = os.environ.get('CACHE_REDIS_URL', 'redis://localhost:6379/0')
 
 #Document settings
 SPECTACULAR_SETTINGS = {
