@@ -15,4 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app/
 
-CMD python manage.py migrate --noinput && gunicorn core.wsgi:application --bind 0.0.0.0:10000
+COPY start.sh /app/start.sh
+
+RUN chmod +x /app/start.sh
+
+CMD ["/app/start.sh"]
